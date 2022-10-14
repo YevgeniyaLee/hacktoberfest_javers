@@ -1,5 +1,6 @@
 package org.javers.core.metamodel.type;
 
+import com.sun.tools.javac.util.List;
 import org.javers.common.validation.Validate;
 import org.javers.core.JaversBuilder;
 import org.javers.core.diff.changetype.PropertyChange;
@@ -8,6 +9,7 @@ import org.javers.core.diff.custom.CustomPropertyComparator;
 import org.javers.core.metamodel.property.Property;
 
 import java.lang.reflect.Type;
+import java.util.Collections;
 import java.util.Optional;
 
 /**
@@ -57,6 +59,11 @@ public class CustomType<T> extends ClassType implements CustomComparableType {
     public String valueToString(Object value) {
         return comparator.toString((T) value);
     }
+
+//    @Override
+//    ManagedType spawn(ManagedClass managedClass, Optional<String> typeName) {
+//        return new CustomType(managedClass, managedClass.getProperties(getIdPropertyNames()), typeName);
+//    }
 
     private static class CustomPropertyComparatorNullSafe<T, C extends PropertyChange>
             extends CustomValueComparatorNullSafe<T>

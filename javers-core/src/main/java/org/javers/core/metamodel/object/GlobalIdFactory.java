@@ -42,41 +42,49 @@ public class GlobalIdFactory {
         Optional<ObjectAccessProxy> cdoProxy = objectAccessHook.createAccessor(targetCdo);
 
         Class<?> targetClass = cdoProxy.map((p) -> p.getTargetClass()).orElse(targetCdo.getClass());
-        ManagedType targetManagedType = typeMapper.getJaversManagedType(targetClass);
+        JaversType javersType = typeMapper.getJaversType(targetClass);
+        if(ManagedType.class.isAssignableFrom(javersType.getClass())) {
+            ManagedType targetManagedType = typeMapper.getJaversManagedType(targetClass);
 
-        if (targetManagedType instanceof EntityType) {
-            if (cdoProxy.isPresent() && cdoProxy.get().getLocalId().isPresent()){
-                return createInstanceId(cdoProxy.get().getLocalId().get(), targetClass);
+            if (targetManagedType instanceof EntityType) {
+                if (cdoProxy.isPresent() && cdoProxy.get().getLocalId().isPresent()){
+                    return createInstanceId(cdoProxy.get().getLocalId().get(), targetClass);
+                }
+                else {
+                    return ((EntityType) targetManagedType).createIdFromInstance(targetCdo);
+                }
             }
-            else {
-                return ((EntityType) targetManagedType).createIdFromInstance(targetCdo);
+
+            if (targetManagedType instanceof ValueObjectType && !hasOwner(ownerContext)) {
+                return new UnboundedValueObjectId(targetManagedType.getName());
             }
+
+            if (targetManagedType instanceof ValueObjectType && hasOwner(ownerContext)) {
+                Supplier<String> parentFragment = createParentFragment(ownerContext.getOwnerId());
+                String localPath = ownerContext.getPath();
+
+                if (ownerContext.requiresObjectHasher() ||
+                        ValueObjectIdWithHash.containsHashPlaceholder(parentFragment.get())) {
+                    return new ValueObjectIdWithPlaceholder(
+                            targetManagedType.getName(),
+                            getRootOwnerId(ownerContext),
+                            parentFragment,
+                            localPath,
+                            ownerContext.requiresObjectHasher());
+                }
+                else {
+                    return new ValueObjectId(targetManagedType.getName(), getRootOwnerId(ownerContext),
+                            parentFragment.get() + localPath);
+                }
+            }
+
+            throw new JaversException(JaversExceptionCode.NOT_IMPLEMENTED);
+        } else {
+//            CustomType customType = (CustomType) javersType;
+            GlobalId id = new UnboundedValueObjectId(targetClass.getTypeName());
+            return id;
         }
 
-        if (targetManagedType instanceof ValueObjectType && !hasOwner(ownerContext)) {
-            return new UnboundedValueObjectId(targetManagedType.getName());
-        }
-
-        if (targetManagedType instanceof ValueObjectType && hasOwner(ownerContext)) {
-            Supplier<String> parentFragment = createParentFragment(ownerContext.getOwnerId());
-            String localPath = ownerContext.getPath();
-
-            if (ownerContext.requiresObjectHasher() ||
-                   ValueObjectIdWithHash.containsHashPlaceholder(parentFragment.get())) {
-                return new ValueObjectIdWithPlaceholder(
-                        targetManagedType.getName(),
-                        getRootOwnerId(ownerContext),
-                        parentFragment,
-                        localPath,
-                        ownerContext.requiresObjectHasher());
-            }
-            else {
-                return new ValueObjectId(targetManagedType.getName(), getRootOwnerId(ownerContext),
-                        parentFragment.get() + localPath);
-            }
-        }
-
-        throw new JaversException(JaversExceptionCode.NOT_IMPLEMENTED);
     }
 
     private Supplier<String> createParentFragment(GlobalId parentId) {
