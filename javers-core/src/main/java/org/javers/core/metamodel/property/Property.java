@@ -4,8 +4,12 @@ import java.lang.reflect.Field;
 import org.javers.common.exception.JaversException;
 import org.javers.common.exception.JaversExceptionCode;
 import org.javers.common.reflection.JaversMember;
+import org.javers.core.metamodel.type.JaversProperty;
+import org.javers.core.metamodel.type.JaversType;
+
 import java.lang.reflect.Type;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 import static org.javers.common.validation.Validate.argumentIsNotNull;
 
@@ -83,12 +87,20 @@ public class Property {
      * @param target invocation target
      * @param value value to be set
      */
-    public void set(Object target, Object value) {
+    public Property set(Object target, Object value) {
         try {
-            member.setEvenIfPrivate(target, value);
+            JaversMember newMember = member.setEvenIfPrivate(target, value);
+//            return new JaversProperty(new Supplier<JaversType>() { // todo
+//                @Override
+//                public JaversType get() {
+//                    return null;
+//                }
+//            }, );
+            return this;
+
         } catch (JaversException e) {
             if (e.getCode() == JaversExceptionCode.MISSING_PROPERTY) {
-                return; //swallowed
+                return null; //swallowed
             }
             throw e;
         }

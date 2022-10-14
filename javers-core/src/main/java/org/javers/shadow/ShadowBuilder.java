@@ -1,6 +1,7 @@
 package org.javers.shadow;
 
 import org.javers.core.metamodel.object.CdoSnapshot;
+import org.javers.core.metamodel.property.Property;
 import org.javers.core.metamodel.type.EnumerableType;
 import org.javers.core.metamodel.type.JaversProperty;
 
@@ -44,7 +45,13 @@ class ShadowBuilder {
     }
 
     void wire() {
+        Set<Wiring> copy = new HashSet<>();
         wirings.forEach(Wiring::wire);
+        for(Wiring wiring : wirings){
+            Wiring copiedWiring = wiring.wire();
+            copy.add(copiedWiring);
+        }
+        this.wirings = copy;
     }
 
     private abstract class Wiring {
@@ -54,7 +61,7 @@ class ShadowBuilder {
             this.property = property;
         }
 
-        abstract void wire();
+        abstract Wiring wire();
     }
 
     private class ReferenceWiring extends Wiring {
@@ -66,8 +73,9 @@ class ShadowBuilder {
         }
 
         @Override
-        void wire() {
-            property.set(shadow, target.shadow);
+        Wiring wire() {
+            Property newProperty = property.set(shadow, target.shadow);
+            return new ReferenceWiring((JaversProperty) newProperty, this.target);
         }
     }
 
@@ -80,7 +88,7 @@ class ShadowBuilder {
         }
 
         @Override
-        void wire() {
+        Wiring wire() {
             EnumerableType propertyType = property.getType();
 
             Object targetContainer = propertyType.map(targetWithShadows, (valueOrShadow) -> {
@@ -91,7 +99,8 @@ class ShadowBuilder {
                 return valueOrShadow; //vale is passed as is
             });
 
-            property.set(shadow, targetContainer);
+            Property newProperty = property.set(shadow, targetContainer);
+            return new EnumerableWiring((JaversProperty) newProperty, this.targetWithShadows);
         }
     }
 }

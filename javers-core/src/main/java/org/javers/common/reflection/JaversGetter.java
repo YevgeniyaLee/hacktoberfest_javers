@@ -55,12 +55,13 @@ public class JaversGetter extends JaversMember<Method> {
     }
 
     @Override
-    public void setEvenIfPrivate(Object onObject, Object value) {
+    public JaversMember setEvenIfPrivate(Object onObject, Object value) {
         setterMethod.orElseThrow(() -> new JaversException(JaversExceptionCode.SETTER_NOT_FOUND,
                 getRawMember().getName(), getRawMember().getDeclaringClass().getName()));
 
         try {
             setterMethod.get().invoke(onObject, value);
+            return this;
         } catch (IllegalAccessException | InvocationTargetException e) {
             throw new JaversException(JaversExceptionCode.SETTER_INVOCATION_ERROR,
                     setterMethod.get().getName(), onObject.getClass().getName(), e);

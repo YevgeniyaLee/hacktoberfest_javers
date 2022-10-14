@@ -88,7 +88,7 @@ public abstract class JaversMember<T extends Member> {
 
     public abstract Object getEvenIfPrivate(Object target);
 
-    public abstract void setEvenIfPrivate(Object target, Object value);
+    public abstract JaversMember setEvenIfPrivate(Object target, Object value);
 
     void setAccessibleIfNecessary(Member rawMember) {
         if (!isPublic(rawMember)) {

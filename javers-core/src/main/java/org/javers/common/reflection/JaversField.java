@@ -35,20 +35,28 @@ public class JaversField extends JaversMember<Field> {
             return getOnMissingProperty(onObject);
         } catch (IllegalAccessException e) {
             throw new JaversException(JaversExceptionCode.PROPERTY_ACCESS_ERROR,
-                  this, onObject.getClass().getSimpleName(), e.getClass().getName()+": "+e.getMessage());
+                    this, onObject.getClass().getSimpleName(), e.getClass().getName() + ": " + e.getMessage());
         }
     }
 
     @Override
-    public void setEvenIfPrivate(Object onObject, Object value) {
+    public JaversMember setEvenIfPrivate(Object onObject, Object value) { // todo
         try {
+
+//            for (Field field : onObject.getClass().getDeclaredFields()) {
+//                field.setAccessible(true);
+//                if (value instanceof Collection && field.getName().equals("set")) {
+//                    field.set(onObject, value);
+//                }
+//            }
             getRawMember().set(onObject, value);
-        } catch (IllegalArgumentException ie){
+            return new JaversField(this.getRawMember(), this.getGenericResolvedType());
+        } catch (IllegalArgumentException ie) {
             String valueType = value == null ? "null" : value.getClass().getName();
             throw new JaversException(JaversExceptionCode.PROPERTY_SETTING_ERROR, valueType, this, ie.getClass().getName() + " - " + ie.getMessage());
         } catch (IllegalAccessException e) {
             throw new JaversException(JaversExceptionCode.PROPERTY_ACCESS_ERROR,
-                    this, onObject.getClass().getSimpleName(), e.getClass().getName()+": "+e.getMessage());
+                    this, onObject.getClass().getSimpleName(), e.getClass().getName() + ": " + e.getMessage());
         }
     }
 
